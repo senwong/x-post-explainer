@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X 推文俚语解析助手 - 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">✦</div>
+      <div>
+        <h1>X 推文俚语解析助手</h1>
+        <p class="subtitle">支持任意 OpenAI 兼容格式接口（Gemini / OpenAI / DeepSeek / 中转站）</p>
+      </div>
+    </header>
+
+    <section class="section">
+      <label class="label">快捷预设（点击一键填充）</label>
+      <div class="presets">
+        <button type="button" class="preset-btn" data-preset="gemini">Gemini</button>
+        <button type="button" class="preset-btn" data-preset="openai">OpenAI</button>
+        <button type="button" class="preset-btn" data-preset="deepseek">DeepSeek</button>
+        <button type="button" class="preset-btn" data-preset="openrouter">OpenRouter</button>
+        <button type="button" class="preset-btn" data-preset="ollama">本地 Ollama</button>
+      </div>
+    </section>
+
+    <form id="settingsForm" class="form">
+      <div class="field">
+        <label class="label" for="baseUrl">API Base URL</label>
+        <input id="baseUrl" type="url" required placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
+        <span class="hint">自动拼接 <code>/chat/completions</code>（如已包含则直接使用）</span>
+      </div>
+
+      <div class="field">
+        <label class="label" for="apiKey">API Key</label>
+        <div class="key-row">
+          <input id="apiKey" type="password" placeholder="sk-... 或 AIza...">
+          <button type="button" id="toggleKeyBtn" class="ghost-btn">显示</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="model">模型名称 (Model)</label>
+        <input id="model" type="text" required placeholder="gemini-2.5-flash / gpt-4o-mini / deepseek-chat">
+      </div>
+
+      <div class="toggles">
+        <label class="toggle-item">
+          <input id="includeContext" type="checkbox">
+          <span>
+            <strong>自动抓取上下文</strong>
+            <small>包含父帖（回复原帖）和引用推文（Quote Tweet）</small>
+          </span>
+        </label>
+
+        <label class="toggle-item">
+          <input id="includeImages" type="checkbox">
+          <span>
+            <strong>发送推文配图</strong>
+            <small>使用多模态模型（Gemini / GPT-4o）时建议开启；纯文本模型如 DeepSeek-chat 请关闭</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="field">
+        <div class="label-row">
+          <label class="label" for="systemPrompt">系统提示词 (System Prompt)</label>
+          <button type="button" id="resetPromptBtn" class="link-btn">恢复默认</button>
+        </div>
+        <textarea id="systemPrompt" rows="6"></textarea>
+      </div>
+
+      <div id="statusBox" class="status hidden"></div>
+
+      <div class="actions">
+        <button type="button" id="testBtn" class="secondary-btn">测试连接</button>
+        <button type="submit" id="saveBtn" class="primary-btn">保存设置</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Tweet Slang Explainer - X 推文俚语解析助手",
+  "version": "1.0.0",
+  "description": "在 X (Twitter) 帖子旁一键调用 AI 解析英文俚语、网络热梗、上下文语境与配图，支持侧边栏多轮追问。",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://pbs.twimg.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.openai.com/*",
+    "https://api.deepseek.com/*",
+    "https://openrouter.ai/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "options.html",
+    "default_title": "推文俚语解析设置",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "markdown.js",
+        "extractor.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
