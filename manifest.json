@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tweet Slang Explainer - X 推文俚语解析助手",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "在 X (Twitter) 帖子旁一键调用 AI 解析英文俚语、网络热梗、上下文语境与配图，支持侧边栏多轮追问。",
   "permissions": [
     "storage"

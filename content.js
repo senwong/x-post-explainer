@@ -13,15 +13,42 @@
   let isStreaming = false;
   let drawerRoot = null;
   let drawerRefs = null;
+  let themeMode = 'system'; // 'system' | 'light' | 'dark'
 
-  function detectTheme() {
-    const bg = getComputedStyle(document.body).backgroundColor || '';
-    const match = bg.match(/\d+/g);
-    if (!match || match.length < 3) return 'dark';
-    const [r, g, b] = match.map(Number);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.5 ? 'dark' : 'light';
+  const systemDarkMq = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function resolveEffectiveTheme(mode) {
+    if (mode === 'light' || mode === 'dark') return mode;
+    return systemDarkMq.matches ? 'dark' : 'light';
   }
+
+  function getThemeMeta(mode) {
+    if (mode === 'light') return { icon: '☀', title: '主题：浅色（点击切换）' };
+    if (mode === 'dark') return { icon: '☾', title: '主题：深色（点击切换）' };
+    return { icon: '◐', title: '主题：跟随系统（点击切换）' };
+  }
+
+  function loadInitialTheme() {
+    try {
+      chrome.storage.local.get({ theme: 'system' }, (res) => {
+        themeMode = res?.theme || 'system';
+        updateDrawerTheme();
+      });
+    } catch (_) {}
+  }
+
+  systemDarkMq.addEventListener('change', () => {
+    if (themeMode === 'system') updateDrawerTheme();
+  });
+
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.theme) {
+        themeMode = changes.theme.newValue || 'system';
+        updateDrawerTheme();
+      }
+    });
+  } catch (_) {}
 
   function createSparkleSvg(size = 16) {
     return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.3L19 10.2l-5.1 1.9L12 17.5l-1.9-5.4L5 10.2l5.1-1.9L12 3z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>`;
@@ -475,6 +502,7 @@
             <span>X 推文俚语解析</span>
           </div>
           <div class="header-actions">
+            <button class="icon-btn" id="themeBtn" title="主题：跟随系统（点击切换）">◐</button>
             <button class="icon-btn" id="rerunBtn" title="重新解析当前推文">重跑</button>
             <button class="icon-btn" id="settingsBtn" title="打开 API 设置">设置</button>
             <button class="icon-btn" id="closeBtn" title="关闭 (Esc)">✕</button>
@@ -507,6 +535,7 @@
 
     drawerRefs = {
       drawer: drawerRoot.getElementById('drawer'),
+      themeBtn: drawerRoot.getElementById('themeBtn'),
       rerunBtn: drawerRoot.getElementById('rerunBtn'),
       settingsBtn: drawerRoot.getElementById('settingsBtn'),
       closeBtn: drawerRoot.getElementById('closeBtn'),
@@ -517,6 +546,16 @@
       chatInput: drawerRoot.getElementById('chatInput'),
       sendBtn: drawerRoot.getElementById('sendBtn')
     };
+
+    drawerRefs.themeBtn.addEventListener('click', () => {
+      const order = ['system', 'light', 'dark'];
+      const next = order[(order.indexOf(themeMode) + 1) % order.length];
+      themeMode = next;
+      updateDrawerTheme();
+      try {
+        chrome.storage.local.set({ theme: next });
+      } catch (_) {}
+    });
 
     drawerRefs.closeBtn.addEventListener('click', closeDrawer);
     drawerRefs.settingsBtn.addEventListener('click', () => {
@@ -569,8 +608,13 @@
 
   function updateDrawerTheme() {
     if (!drawerRefs) return;
-    const theme = detectTheme();
-    drawerRefs.drawer.classList.toggle('light', theme === 'light');
+    const effective = resolveEffectiveTheme(themeMode);
+    drawerRefs.drawer.classList.toggle('light', effective === 'light');
+    if (drawerRefs.themeBtn) {
+      const meta = getThemeMeta(themeMode);
+      drawerRefs.themeBtn.textContent = meta.icon;
+      drawerRefs.themeBtn.title = meta.title;
+    }
   }
 
   function openDrawer() {
@@ -796,6 +840,7 @@
   }
 
   // Initialize
+  loadInitialTheme();
   injectButtonStyle();
   scanTweets();
 

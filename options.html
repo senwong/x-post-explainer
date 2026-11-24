@@ -47,6 +47,15 @@
         <input id="model" type="text" required placeholder="gemini-2.5-flash / gpt-4o-mini / deepseek-chat">
       </div>
 
+      <div class="field">
+        <label class="label">主题外观</label>
+        <div class="segmented" id="themeSegmented" role="radiogroup" aria-label="主题外观">
+          <button type="button" class="seg-btn" data-theme="system">跟随系统</button>
+          <button type="button" class="seg-btn" data-theme="light">浅色</button>
+          <button type="button" class="seg-btn" data-theme="dark">深色</button>
+        </div>
+      </div>
+
       <div class="toggles">
         <label class="toggle-item">
           <input id="includeContext" type="checkbox">

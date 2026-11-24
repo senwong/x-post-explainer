@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   model: 'gemini-2.5-flash',
   includeImages: true,
   includeContext: true,
+  theme: 'system',
   systemPrompt: DEFAULT_SYSTEM_PROMPT
 };
 

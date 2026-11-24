@@ -44,6 +44,7 @@ const els = {
   apiKey: document.getElementById('apiKey'),
   toggleKeyBtn: document.getElementById('toggleKeyBtn'),
   model: document.getElementById('model'),
+  themeButtons: Array.from(document.querySelectorAll('#themeSegmented .seg-btn')),
   includeContext: document.getElementById('includeContext'),
   includeImages: document.getElementById('includeImages'),
   systemPrompt: document.getElementById('systemPrompt'),
@@ -51,6 +52,37 @@ const els = {
   testBtn: document.getElementById('testBtn'),
   statusBox: document.getElementById('statusBox')
 };
+
+const systemDarkMq = window.matchMedia('(prefers-color-scheme: dark)');
+let currentTheme = 'system';
+
+function resolveTheme(mode) {
+  if (mode === 'light' || mode === 'dark') return mode;
+  return systemDarkMq.matches ? 'dark' : 'light';
+}
+
+function applyTheme(mode) {
+  currentTheme = mode || 'system';
+  const effective = resolveTheme(currentTheme);
+  document.documentElement.setAttribute('data-theme', effective);
+  els.themeButtons.forEach((btn) => {
+    const active = btn.getAttribute('data-theme') === currentTheme;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', String(active));
+  });
+}
+
+systemDarkMq.addEventListener('change', () => {
+  if (currentTheme === 'system') applyTheme('system');
+});
+
+els.themeButtons.forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const mode = btn.getAttribute('data-theme') || 'system';
+    applyTheme(mode);
+    await chrome.storage.local.set({ theme: mode });
+  });
+});
 
 function showStatus(text, type = 'info') {
   els.statusBox.textContent = text;
@@ -63,6 +95,7 @@ async function loadSettings() {
   els.baseUrl.value = cfg.baseUrl || PRESETS.gemini.baseUrl;
   els.apiKey.value = cfg.apiKey || '';
   els.model.value = cfg.model || PRESETS.gemini.model;
+  applyTheme(cfg.theme || 'system');
   els.includeContext.checked = cfg.includeContext !== false;
   els.includeImages.checked = cfg.includeImages !== false;
   els.systemPrompt.value = cfg.systemPrompt || DEFAULT_SYSTEM_PROMPT;
@@ -130,6 +163,7 @@ els.form.addEventListener('submit', async (e) => {
     baseUrl,
     apiKey: els.apiKey.value.trim(),
     model: els.model.value.trim(),
+    theme: currentTheme,
     includeContext: els.includeContext.checked,
     includeImages: els.includeImages.checked,
     systemPrompt: els.systemPrompt.value.trim() || DEFAULT_SYSTEM_PROMPT
