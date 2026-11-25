@@ -14,6 +14,9 @@
   let drawerRoot = null;
   let drawerRefs = null;
   let themeMode = 'system'; // 'system' | 'light' | 'dark'
+  let shouldAutoScroll = true;
+  let isProgrammaticScroll = false;
+  const SCROLL_BOTTOM_THRESHOLD = 32;
 
   const systemDarkMq = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -292,7 +295,6 @@
           display: flex;
           flex-direction: column;
           gap: 12px;
-          scroll-behavior: smooth;
         }
 
         .msg {
@@ -557,6 +559,23 @@
       } catch (_) {}
     });
 
+    drawerRefs.messages.addEventListener(
+      'wheel',
+      (e) => {
+        if (e.deltaY < 0) shouldAutoScroll = false;
+      },
+      { passive: true }
+    );
+
+    drawerRefs.messages.addEventListener(
+      'scroll',
+      () => {
+        if (isProgrammaticScroll) return;
+        shouldAutoScroll = isNearBottom(drawerRefs.messages);
+      },
+      { passive: true }
+    );
+
     drawerRefs.closeBtn.addEventListener('click', closeDrawer);
     drawerRefs.settingsBtn.addEventListener('click', () => {
       chrome.runtime.sendMessage({ type: 'open-options' });
@@ -673,7 +692,7 @@
     for (const m of session.uiMessages) {
       appendMessageElement(m.role, m.content, m.isError, m.errorCode);
     }
-    scrollMessagesToBottom();
+    scrollMessagesToBottom(true);
   }
 
   function appendMessageElement(role, content, isError = false, errorCode = '') {
@@ -705,9 +724,19 @@
     return div;
   }
 
-  function scrollMessagesToBottom() {
+  function isNearBottom(el) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= SCROLL_BOTTOM_THRESHOLD;
+  }
+
+  function scrollMessagesToBottom(force = false) {
     if (!drawerRefs) return;
+    if (force) shouldAutoScroll = true;
+    if (!shouldAutoScroll) return;
+    isProgrammaticScroll = true;
     drawerRefs.messages.scrollTop = drawerRefs.messages.scrollHeight;
+    requestAnimationFrame(() => {
+      isProgrammaticScroll = false;
+    });
   }
 
   async function handleExplainClick(article) {
@@ -769,7 +798,7 @@
     session.messages.push({ role: 'user', content: text });
     session.uiMessages.push({ role: 'user', content: text });
     appendMessageElement('user', text);
-    scrollMessagesToBottom();
+    scrollMessagesToBottom(true);
 
     streamAssistantReply(session);
   }
@@ -779,7 +808,7 @@
     setStreamingState(true);
 
     const assistantEl = appendMessageElement('assistant', '');
-    scrollMessagesToBottom();
+    scrollMessagesToBottom(true);
 
     let fullText = '';
     let port;
@@ -799,7 +828,7 @@
       if (msg.type === 'chunk') {
         fullText += msg.content;
         assistantEl.innerHTML = window.XExplainerMarkdown.renderMarkdown(fullText);
-        scrollMessagesToBottom();
+        scrollMessagesToBottom(false);
       } else if (msg.type === 'done' || msg.type === 'aborted') {
         if (fullText) {
           session.messages.push({ role: 'assistant', content: fullText });
@@ -819,7 +848,7 @@
           errorCode: msg.code || ''
         });
         appendMessageElement('assistant', msg.error, true, msg.code || '');
-        scrollMessagesToBottom();
+        scrollMessagesToBottom(false);
         setStreamingState(false);
         try { port.disconnect(); } catch (_) {}
         if (activePort === port) activePort = null;
