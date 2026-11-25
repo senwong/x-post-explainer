@@ -15,8 +15,8 @@
   let drawerRefs = null;
   let themeMode = 'system'; // 'system' | 'light' | 'dark'
   let shouldAutoScroll = true;
-  let isProgrammaticScroll = false;
-  const SCROLL_BOTTOM_THRESHOLD = 32;
+  let lastScrollTop = 0;
+  const SCROLL_REATTACH_THRESHOLD = 8;
 
   const systemDarkMq = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -291,6 +291,7 @@
         .messages {
           flex: 1;
           overflow-y: auto;
+          overscroll-behavior: contain;
           padding: 14px;
           display: flex;
           flex-direction: column;
@@ -562,7 +563,11 @@
     drawerRefs.messages.addEventListener(
       'wheel',
       (e) => {
-        if (e.deltaY < 0) shouldAutoScroll = false;
+        if (e.deltaY < 0) {
+          shouldAutoScroll = false;
+        } else if (e.deltaY > 0 && isNearBottom(drawerRefs.messages)) {
+          shouldAutoScroll = true;
+        }
       },
       { passive: true }
     );
@@ -570,8 +575,14 @@
     drawerRefs.messages.addEventListener(
       'scroll',
       () => {
-        if (isProgrammaticScroll) return;
-        shouldAutoScroll = isNearBottom(drawerRefs.messages);
+        const el = drawerRefs.messages;
+        const currentTop = el.scrollTop;
+        if (currentTop < lastScrollTop - 1) {
+          shouldAutoScroll = false;
+        } else if (currentTop > lastScrollTop && isNearBottom(el)) {
+          shouldAutoScroll = true;
+        }
+        lastScrollTop = currentTop;
       },
       { passive: true }
     );
@@ -725,18 +736,16 @@
   }
 
   function isNearBottom(el) {
-    return el.scrollHeight - el.scrollTop - el.clientHeight <= SCROLL_BOTTOM_THRESHOLD;
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= SCROLL_REATTACH_THRESHOLD;
   }
 
   function scrollMessagesToBottom(force = false) {
     if (!drawerRefs) return;
     if (force) shouldAutoScroll = true;
     if (!shouldAutoScroll) return;
-    isProgrammaticScroll = true;
-    drawerRefs.messages.scrollTop = drawerRefs.messages.scrollHeight;
-    requestAnimationFrame(() => {
-      isProgrammaticScroll = false;
-    });
+    const el = drawerRefs.messages;
+    el.scrollTop = el.scrollHeight;
+    lastScrollTop = el.scrollTop;
   }
 
   async function handleExplainClick(article) {
